@@ -12,6 +12,7 @@ def split(path_to_input_csv, out_path):
 
     with open(path_to_input_csv, 'r') as file:
         lines = file.readlines()
+        lines = lines[1:]
 
         n_lines = len(lines)
         n_train = int(n_lines*0.8)

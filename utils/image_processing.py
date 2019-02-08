@@ -8,7 +8,12 @@ def preprocess(path, shape, crop_type='center_crop'):
         raise Exception('Such crop_type is not supported!')
 
     img = cv2.imread(path)
-    assert img.shape == shape, 'Shapes don\'t match: {} with {} for file {}'.format(img.shape, shape, path)
+
+    if img is None:
+        raise Exception('Something went wrong with file {}'.format(path))
+
+    if img.shape != shape:
+        raise Exception('Shapes don\'t match: {} with {} for file {}'.format(img.shape, shape, path))
     img = cv2.resize(img, (320, 240))
 
     if crop_type == 'center_crop':

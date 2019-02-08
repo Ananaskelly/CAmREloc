@@ -57,7 +57,7 @@ def inception_block(inp_ten, f11, f11_reduce3, f11_reduce5, f33, f55, fpp):
     :param fpp:         num 1x1 filters after max_pool
     :return:
     """
-    c_in = inp_ten.get_shape()[-1]
+    c_in = inp_ten.get_shape().as_list()[-1]
 
     conv_1_3 = conv_block(inp_ten, k_size=1, c_in=c_in, c_out=f11_reduce3)
     conv_3_3 = conv_block(conv_1_3, k_size=3, c_in=f11_reduce3, c_out=f33)
@@ -65,7 +65,7 @@ def inception_block(inp_ten, f11, f11_reduce3, f11_reduce5, f33, f55, fpp):
     conv_1_5 = conv_block(inp_ten, k_size=1, c_in=c_in, c_out=f11_reduce5)
     conv_5_5 = conv_block(conv_1_5, k_size=5, c_in=f11_reduce5, c_out=f55)
 
-    max_pool_1_1 = tf.nn.max_pool(value=inp_ten, ksize=3, strides=[1, 1, 1, 1])
+    max_pool_1_1 = tf.nn.max_pool(value=inp_ten, ksize=[1, 3, 3, 1], strides=[1, 1, 1, 1], padding='SAME')
     conv_pool_1 = conv_block(max_pool_1_1, k_size=1, c_in=c_in, c_out=fpp)
 
     conv_1_1 = conv_block(inp_ten, k_size=1, c_in=c_in, c_out=f11)
@@ -76,10 +76,10 @@ def inception_block(inp_ten, f11, f11_reduce3, f11_reduce5, f33, f55, fpp):
 
 
 def in_block(inp_ten):
-    c_in = inp_ten.get_shape()[-1]
+    c_in = inp_ten.get_shape().as_list()[-1]
 
     conv_1 = conv_block(inp_ten, k_size=7, c_in=c_in, c_out=64, strides=[1, 2, 2, 1])
-    max_pool_1 = tf.nn.max_pool(value=conv_1, ksize=3, strides=[1, 2, 2, 1])
+    max_pool_1 = tf.nn.max_pool(value=conv_1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME')
 
     lrn_1 = tf.nn.local_response_normalization(max_pool_1)
 
@@ -88,20 +88,21 @@ def in_block(inp_ten):
 
     lrn_2 = tf.nn.local_response_normalization(conv_3)
 
-    max_pool_2 = tf.nn.max_pool(value=lrn_2, ksize=3, strides=[1, 2, 2, 1])
+    max_pool_2 = tf.nn.max_pool(value=lrn_2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME')
 
     return max_pool_2
 
 
 def auxiliary_classifier_block(inp_ten):
 
-    av_pool = tf.nn.avg_pool(value=inp_ten, ksize=5, strides=[1, 3, 3, 1])
+    av_pool = tf.nn.avg_pool(value=inp_ten, ksize=[1, 5, 5, 1], strides=[1, 3, 3, 1], padding='SAME')
 
-    c_in = av_pool.get_shape()[-1]
+    c_in = av_pool.get_shape().as_list()[-1]
     conv_1 = conv_block(av_pool, k_size=1, c_in=c_in, c_out=128)
 
     flatten = tf.layers.flatten(conv_1)
     fc_1 = tf.layers.dense(inputs=flatten, units=1024)
+    fc_1 = tf.nn.dropout(fc_1, 0.3)
     fc_2 = tf.layers.dense(inputs=fc_1, units=7)
 
     return fc_2

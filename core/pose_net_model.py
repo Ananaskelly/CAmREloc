@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-from utils.tf_utils import in_block, inception_block, auxiliary_classifier_block
+from utils.tf_utils import in_block, inception_block, auxiliary_classifier_block, conv_block
 
 
 class PoseNetModel:
@@ -9,11 +9,13 @@ class PoseNetModel:
     def __init__(self):
 
         self.weight = 0.3
-        self.beta = 500
+        self.beta = 300
         self.x = None
         self.y = None
         self.optimizer = None
         self.optimize = None
+        self.loss = None
+        self.prediction = None
 
     def save_model(self):
         pass
@@ -22,13 +24,14 @@ class PoseNetModel:
         pass
 
     def build_model(self):
-        self.x = tf.placeholder()
-        self.y = tf.placeholder()
-        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=0)
+        self.x = tf.placeholder(tf.float32, [None, 224, 224, 3])
+        self.y = tf.placeholder(tf.float32, [None, 7])
+        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
 
         pred, loss_1, aux_loss_1, aux_loss_2 = self.network()
-        final_loss = loss_1 + self.weight*(aux_loss_1 + aux_loss_2)
-        self.optimize = self.minimize(final_loss)
+        self.prediction = pred
+        self.loss = loss_1 + self.weight*(aux_loss_1 + aux_loss_2)
+        self.optimize = self.minimize(self.loss)
 
     def network(self):
         feat = in_block(self.x)
@@ -49,17 +52,21 @@ class PoseNetModel:
         inc_8 = inception_block(inc_7, f11=256, f11_reduce3=160, f11_reduce5=32, f33=320, f55=128, fpp=64)
         inc_9 = inception_block(inc_8, f11=384, f11_reduce3=192, f11_reduce5=48, f33=384, f55=128, fpp=64)
 
-        av_pool = tf.nn.avg_pool(inc_9, ksize=7, strides=[1, 1])
+        av_pool = tf.nn.avg_pool(inc_9, ksize=[1, 7, 7, 1], strides=[1, 1, 1, 1], padding='SAME')
+
+        av_pool = conv_block(av_pool, k_size=1, c_in=960, c_out=64)
+
         fc_1 = tf.layers.dense(tf.layers.flatten(av_pool), units=2048)
         fc_2 = tf.layers.dense(fc_1, units=7)
 
-        return fc_2, self.loss(fc_2, self.y), self.loss(cl_1, self.y), self.loss(cl_2, self.y)
+        return fc_2, self.get_loss(fc_2, self.y), self.get_loss(cl_1, self.y), self.get_loss(cl_2, self.y)
 
-    def loss(self, est, true):
-
-        return tf.norm(true[:, :3] - est[:, :3], ord=2) + self.beta*tf.norm(true[:, 3:] -
-                                                                            est[:, 3:]/tf.norm(est[:, 3:], ord=2),
-                                                                            ord=2)
+    def get_loss(self, est, true):
+        # est[:, 3:] = est[:, 3:]/tf.norm(est[:, 3:])
+        pos, qua = tf.split(est, [3, 4], 1)
+        qua = tf.div(qua, tf.sqrt(tf.square(qua)))
+        return tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(tf.math.subtract(est[:, :3], true[:, :3])), axis=1)) + \
+               self.beta*tf.sqrt(tf.reduce_sum(tf.square(tf.math.subtract(qua, true[:, 3:])), axis=1)))
 
     def minimize(self, loss):
 
