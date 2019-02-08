@@ -101,7 +101,7 @@ def auxiliary_classifier_block(inp_ten):
     conv_1 = conv_block(av_pool, k_size=1, c_in=c_in, c_out=128)
 
     flatten = tf.layers.flatten(conv_1)
-    fc_1 = tf.layers.dense(inputs=flatten, units=2048)
-    fc_2 = tf.layers.dense(inputs=fc_1, units=1024)
+    fc_1 = tf.layers.dense(inputs=flatten, units=1024)
+    fc_2 = tf.layers.dense(inputs=fc_1, units=7)
 
     return fc_2

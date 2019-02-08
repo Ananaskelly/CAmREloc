@@ -28,10 +28,10 @@ class Batcher:
                 info = line.split(',')
                 img_path = info[-3]
                 px, py, pz = info[3:6]
-                qx, qy, qz = info[6:9]
+                qw, qx, qy, qz = info[6:10]
                 sample_dict = {
                     'pos': [px, py, pz],
-                    'qua': [qx, qy, qz],
+                    'qua': [qw, qx, qy, qz],
                     'img': preprocess(img_path, (480, 640), 'center_crop')
                 }
 
