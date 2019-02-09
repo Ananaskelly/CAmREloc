@@ -2,6 +2,17 @@ import cv2
 import numpy as np
 
 
+def inf_preprocess(path):
+    img = cv2.imread(path)
+
+    if img is None:
+        raise Exception('Can\'t load file {}'.format(path))
+
+    img = cv2.resize(img, (320, 240))
+
+    return center_crop(img)
+
+
 def preprocess(path, shape, crop_type='center_crop'):
 
     if crop_type not in ['center_crop', 'random_crop']:
