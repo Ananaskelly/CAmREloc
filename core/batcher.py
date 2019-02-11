@@ -62,12 +62,14 @@ class Batcher:
         return next(self.generator)
 
     def __iter__(self):
-        if self.global_idx + self.batch_size < self.num_ex:
-            if self.batcher_type != 'test':
-                self.global_idx = 0
-                np.random.shuffle(self.data)
-        while self.global_idx + self.batch_size < self.num_ex:
 
+        while self.global_idx + self.batch_size < self.num_ex:
+            if self.global_idx + self.batch_size > self.num_ex:
+                if self.batcher_type != 'test':
+                    self.global_idx = 0
+                    np.random.shuffle(self.data)
+                else:
+                    return
             idx = self.global_idx
             self.global_idx += self.batch_size
 

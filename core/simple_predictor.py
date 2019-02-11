@@ -19,18 +19,18 @@ class SimplePredictor:
         batch_size = self.test_batcher.b_size
         count = 0
 
-        batch = self.test_batcher.next()
-        while batch is not None:
-            feed_dict = {
-                self.model.x: batch[0]
-            }
-            loss, prediction = self.sess.run([self.model.loss, self.model.prediction], feed_dict=feed_dict)
-            mean_pose_error += calc_pose_error(batch[1][:, :3], prediction[:, :3])
-            mean_qua_error += calc_qua_error(batch[1][:, 3:], prediction[:, 3:])
-            count += batch_size
-
-            batch = self.test_batcher.next()
-
+        while True:
+            try:
+                batch = self.test_batcher.next_batch()
+                feed_dict = {
+                    self.model.x: batch[0]
+                }
+                [prediction] = self.sess.run([self.model.prediction], feed_dict=feed_dict)
+                mean_pose_error += calc_pose_error(batch[1][:, :3], prediction[:, :3])
+                mean_qua_error += calc_qua_error(batch[1][:, 3:], prediction[:, 3:])
+                count += batch_size
+            except StopIteration:
+                break
         mean_qua_error /= count
         mean_pose_error /= count
 
