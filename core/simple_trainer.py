@@ -49,7 +49,7 @@ class SimpleTrainer:
                 print('Validation loss: {}'.format(v_loss))
                 print('Mean epoch train loss: {}'.format(mean_train_epoch_loss / num_it_per_epoch))
                 mean_train_epoch_loss = 0
-                self.model.save_model(self.sess, './models/')
+                # self.model.save_model(self.sess, './models/')
 
         idx = np.arange(len(train_losses))
         plt.xlabel('epoch')
@@ -67,8 +67,9 @@ class SimpleTrainer:
             self.model.y: batch_y,
         }
         if self.enable_phase:
-        	feed_dict[self.model.phase] = True
-        loss, _, prediction, s1, s2 = self.sess.run([self.model.loss, self.model.optimize, self.model.prediction, self.model.s1, self.model.s2], feed_dict=feed_dict)
+            feed_dict[self.model.phase] = True
+        loss, _, prediction, s1, s2 = self.sess.run([self.model.loss, self.model.optimize, self.model.prediction,
+                                                     self.model.s1, self.model.s2], feed_dict=feed_dict)
         # print(prediction[0], batch_y[0])
         # print(s1, s2)
 
@@ -82,7 +83,7 @@ class SimpleTrainer:
         }
         
         if self.enable_phase:
-           feed_dict[self.model.phase] = True
+            feed_dict[self.model.phase] = True
         
         loss, _ = self.sess.run([self.model.loss, self.model.optimize], feed_dict=feed_dict)
 

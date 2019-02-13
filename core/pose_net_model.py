@@ -26,7 +26,6 @@ class PoseNetModel:
     def init_saver(self):
         self.saver = tf.train.Saver()
 
-
     def save_model(self, sess, path):
         self.saver.save(sess, os.path.join(path, 'pose_net/pose_net_model'))
 
@@ -40,8 +39,6 @@ class PoseNetModel:
         self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-4)
         self.s1 = tf.Variable(0.0)
         self.s2 = tf.Variable(-3.0)
-
-
         pred, loss_1, aux_loss_1, aux_loss_2 = self.network()
         self.prediction = pred
         self.loss = loss_1 + self.weight*(aux_loss_1 + aux_loss_2)

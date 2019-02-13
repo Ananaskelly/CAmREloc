@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 
 from utils.tf_utils import residual_block, hourglass_regressor, conv_block, decoder_block
@@ -15,8 +16,11 @@ class HourglassModel:
         self.s1 = None
         self.s2 = None
 
-    def save_model(self):
-        pass
+    def init_saver(self):
+        self.saver = tf.train.Saver()
+
+    def save_model(self, sess, path):
+        self.saver.save(sess, os.path.join(path, 'hourglass/hourglass_model'))
 
     def restore_model(self):
         pass
@@ -38,35 +42,38 @@ class HourglassModel:
     def network(self):
         conv_1 = conv_block(self.x, k_size=7, c_in=3, c_out=64, strides=[1, 2, 2, 1])
 
-        pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 3, 3, 1], strides=[1, 1, 1, 1], padding='SAME')
+        pool_1 = tf.nn.max_pool(conv_1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME')
+        last_feat = []
 
         feat = pool_1
         for i in range(3):
             feat = residual_block(feat, filter_size=3, c_out=64, is_train=self.phase)
 
+        last_feat.append(feat)
         feat = residual_block(feat, filter_size=3, c_out=128, enable_proj_shortcut=True,
                               strides=[1, 2, 2, 1], is_train=self.phase)
 
         for i in range(3):
             feat = residual_block(feat, filter_size=3, c_out=128, is_train=self.phase)
-
+        last_feat.append(feat)
         feat = residual_block(feat, filter_size=3, c_out=256, enable_proj_shortcut=True,
                               strides=[1, 2, 2, 1], is_train=self.phase)
 
         for i in range(5):
             feat = residual_block(feat, filter_size=3, c_out=256, is_train=self.phase)
 
+        last_feat.append(feat)
         feat = residual_block(feat, filter_size=3, c_out=512, enable_proj_shortcut=True,
                               strides=[1, 2, 2, 1], is_train=self.phase)
 
         for i in range(2):
             feat = residual_block(feat, filter_size=3, c_out=512, is_train=self.phase)
 
-        up_conv_1 = decoder_block(feat, 4, 512, out_size=14, is_train=self.phase)
-        up_conv_2 = decoder_block(up_conv_1, 4, 256, out_size=28, is_train=self.phase)
-        up_conv_3 = decoder_block(up_conv_2, 4, 128, out_size=56, is_train=self.phase)
+        up_conv_1 = decoder_block(feat, 4, 256, out_size=14, is_train=self.phase) + last_feat[2]
+        up_conv_2 = decoder_block(up_conv_1, 4, 128, out_size=28, is_train=self.phase) + last_feat[1]
+        up_conv_3 = decoder_block(up_conv_2, 4, 64, out_size=56, is_train=self.phase) + last_feat[0]
 
-        conv_final = conv_block(up_conv_3, k_size=3, c_in=128, c_out=56)
+        conv_final = conv_block(up_conv_3, k_size=3, c_in=64, c_out=32)
         conv_final = tf.layers.batch_normalization(conv_final, training=self.phase)
 
         out_final = hourglass_regressor(conv_final)
