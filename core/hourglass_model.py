@@ -86,7 +86,7 @@ class HourglassModel:
     def get_loss(self, est, true):
         # est[:, 3:] = est[:, 3:]/tf.norm(est[:, 3:])
         pos, qua = tf.split(est, [3, 4], 1)
-        qua = tf.div(qua, tf.sqrt(tf.reduce_sum(tf.square(qua), axis=1)))
+        qua = tf.div(qua, tf.expand_dims(tf.sqrt(tf.reduce_sum(tf.square(qua), axis=1)), axis=-1))
         return tf.exp(-self.s1) * tf.reduce_mean(
             tf.sqrt(tf.reduce_sum(tf.square(tf.subtract(est[:, :3], true[:, :3])), axis=1)) + \
             tf.exp(-self.s2) * tf.sqrt(
