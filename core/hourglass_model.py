@@ -8,6 +8,7 @@ class HourglassModel:
     def __init__(self):
         self.x = None
         self.y = None
+        self.phase = None
         self.optimizer = None
         self.optimize = None
         self.loss = None
@@ -15,6 +16,8 @@ class HourglassModel:
 
         self.s1 = None
         self.s2 = None
+
+        self.saver = None
 
     def init_saver(self):
         self.saver = tf.train.Saver()

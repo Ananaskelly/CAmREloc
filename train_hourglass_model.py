@@ -10,8 +10,9 @@ from core.batcher import Batcher
 
 def run():
 
-    train_batcher = Batcher(path_to_data='./data/images', path_to_csv='./data/train.csv', batch_size=4)
-    valid_batcher = Batcher(path_to_data='./data/images', path_to_csv='./data/valid.csv', batch_size=4)
+    train_batcher = Batcher(path_to_data='./data/images', path_to_csv='./data/train.csv', batch_size=28)
+    valid_batcher = Batcher(path_to_data='./data/images', path_to_csv='./data/valid.csv', crop_type='random_crop',
+                            batch_size=28)
     model = HourglassModel()
     model.build_model()
 

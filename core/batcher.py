@@ -7,14 +7,16 @@ from utils.image_processing import preprocess
 
 class Batcher:
 
-    def __init__(self, path_to_data, path_to_csv, batch_size, net_type='pose_net', batcher_type='train', norm_type=None):
+    def __init__(self, path_to_data, path_to_csv, batch_size, net_type='pose_net', batcher_type='train',
+                 crop_type='center_crop', norm_type=None):
         """
 
         :param path_to_data: path to images
         :param path_to_csv:  path to csv
         :param batch_size:   batch size
         :param net_type:
-        :param batcher_type: 
+        :param batcher_type:
+        :param crop_type:
         :param norm_type: 
         """
         
@@ -24,6 +26,7 @@ class Batcher:
         self.net_type = net_type
         self.batcher_type = batcher_type
         self.norm_type = norm_type
+        self.crop_type = crop_type
 
         self.data = []
         self.num_ex = 0
@@ -54,7 +57,8 @@ class Batcher:
                 sample_dict = {
                     'pos': np.array([px, py, pz], dtype=np.float32),
                     'qua': np.array([qw, qx, qy, qz], dtype=np.float32),
-                    'img': preprocess(os.path.join(self.data_path, img_path), (480, 640, 3), 'center_crop', self.norm_type)
+                    'img': preprocess(os.path.join(self.data_path, img_path), (480, 640, 3), self.crop_type,
+                                      self.norm_type)
                 }
 
                 self.data.append(sample_dict)

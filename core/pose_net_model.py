@@ -13,6 +13,8 @@ class PoseNetModel:
         self.beta = 300
         self.x = None
         self.y = None
+        self.phase = None
+
         self.optimizer = None
         self.optimize = None
         self.loss = None
@@ -61,13 +63,12 @@ class PoseNetModel:
 
         inc_7 = inception_block(inc_6, f11=256, f11_reduce3=160, f11_reduce5=32, f33=320, f55=128, fpp=64)
         inc_8 = inception_block(inc_7, f11=256, f11_reduce3=160, f11_reduce5=32, f33=320, f55=128, fpp=64)
-        # inc_9 = inception_block(inc_8, f11=384, f11_reduce3=192, f11_reduce5=48, f33=384, f55=128, fpp=64)
-        # inc_9 = inception_block(inc_8, f11=256, f11_reduce3=160, f11_reduce5=48, f33=320, f55=128, fpp=64)
-        inc_9 = inc_8
+        inc_9 = inception_block(inc_8, f11=384, f11_reduce3=192, f11_reduce5=48, f33=384, f55=128, fpp=64)
 
-        av_pool = tf.nn.avg_pool(inc_9, ksize=[1, 7, 7, 1], strides=[1, 1, 1, 1], padding='SAME')
+        # reduce dim
+        conv = conv_block(inc_9, k_size=1, c_in=960, c_out=640)
 
-        # av_pool = conv_block(av_pool, k_size=1, c_in=960, c_out=640)
+        av_pool = tf.nn.avg_pool(conv, ksize=[1, 7, 7, 1], strides=[1, 1, 1, 1], padding='SAME')
 
         fc_1 = tf.layers.dense(tf.layers.flatten(av_pool), units=2048)
         
