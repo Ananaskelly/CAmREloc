@@ -21,7 +21,7 @@ def run():
     trainer.train(enable_phase=True)
 
     test_batcher = Batcher(path_to_data='./data/images', path_to_csv='./data/test.csv', batch_size=4,
-                           batcher_type='test')
+                           batcher_type='test', norm_type='range')
     predictor = SimplePredictor(model, test_batcher, sess)
     print('Start testing...')
     mean_pos, mean_qua = predictor.test(enable_phase=True)

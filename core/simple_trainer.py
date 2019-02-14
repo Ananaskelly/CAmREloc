@@ -18,6 +18,7 @@ class SimpleTrainer:
         self.print_step = print_fr
 
         init = tf.global_variables_initializer()
+        self.model.init_saver()
         self.sess.run(init)
 
     def train(self, enable_phase=False):
@@ -48,6 +49,7 @@ class SimpleTrainer:
                 print('Validation loss: {}'.format(v_loss))
                 print('Mean epoch train loss: {}'.format(mean_train_epoch_loss / num_it_per_epoch))
                 mean_train_epoch_loss = 0
+                self.model.save_model(self.sess, './models/')
 
         idx = np.arange(len(train_losses))
         plt.xlabel('epoch')

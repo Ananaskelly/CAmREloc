@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 
 
@@ -20,8 +21,14 @@ class PoseNetModel:
         self.s1 = None
         self.s2 = None
 
-    def save_model(self):
-        pass
+        self.saver = None
+    
+    def init_saver(self):
+        self.saver = tf.train.Saver()
+
+
+    def save_model(self, sess, path):
+        self.saver.save(sess, os.path.join(path, 'pose_net/pose_net_model'))
 
     def restore_model(self):
         pass

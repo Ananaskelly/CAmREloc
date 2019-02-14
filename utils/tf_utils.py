@@ -136,9 +136,10 @@ def residual_block(inp_ten, filter_size, c_out, strides=[1, 1, 1, 1], padding='S
 def decoder_block(inp_ten, filter_size, c_out, out_size, is_train=True):
 
     in_size = inp_ten.get_shape().as_list()[2]
-    pad_size = out_size - in_size
+    pad_size_l = (out_size - in_size) // 2
+    pad_size_r = out_size - in_size - pad_size_l 
 
-    pad_ten = tf.pad(inp_ten, paddings=[[0, 0], [pad_size, pad_size], [pad_size, pad_size], [0, 0]])
+    pad_ten = tf.pad(inp_ten, paddings=[[0, 0], [pad_size_l, pad_size_r], [pad_size_l, pad_size_r], [0, 0]])
     c_in = pad_ten.get_shape().as_list()[-1]
     conv_1 = conv_block(pad_ten, k_size=filter_size, c_in=c_in, c_out=c_out)
 
