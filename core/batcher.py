@@ -7,7 +7,7 @@ from utils.image_processing import preprocess
 
 class Batcher:
 
-    def __init__(self, path_to_data, path_to_csv, batch_size, net_type='pose_net', batcher_type=''):
+    def __init__(self, path_to_data, path_to_csv, batch_size, net_type='pose_net', batcher_type='train'):
         """
 
         :param path_to_data: path to images
@@ -63,7 +63,7 @@ class Batcher:
 
     def __iter__(self):
 
-        while self.global_idx + self.batch_size < self.num_ex:
+        while True:
             if self.global_idx + self.batch_size > self.num_ex:
                 if self.batcher_type != 'test':
                     self.global_idx = 0
@@ -77,8 +77,8 @@ class Batcher:
                 x = []
                 y = []
                 for i in range(idx, idx+self.batch_size):
-                    x.append(self.data[idx]['img'])
-                    y.append(np.hstack((self.data[idx]['pos'], self.data[idx]['qua'])))
+                    x.append(self.data[i]['img'])
+                    y.append(np.hstack((self.data[i]['pos'], self.data[i]['qua'])))
 
                 yield np.stack(x), np.stack(y)
             else:

@@ -1,5 +1,7 @@
 import tensorflow as tf
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -11,14 +13,17 @@ class SimpleTrainer:
         self.valid_batcher = valid_batcher
         self.sess = sess
         self.epoch_num = epoch_num
+        self.enable_phase = False
 
         self.print_step = print_fr
 
         init = tf.global_variables_initializer()
         self.sess.run(init)
 
-    def train(self):
-
+    def train(self, enable_phase=False):
+        
+        self.enable_phase = enable_phase
+        print(self.enable_phase)
         all_ex = self.train_batcher.num_ex
         batch_size = self.train_batcher.b_size
 
@@ -59,7 +64,11 @@ class SimpleTrainer:
             self.model.x: batch_x,
             self.model.y: batch_y,
         }
-        loss, _ = self.sess.run([self.model.loss, self.model.optimize], feed_dict=feed_dict)
+        if self.enable_phase:
+        	feed_dict[self.model.phase] = True
+        loss, _, prediction, s1, s2 = self.sess.run([self.model.loss, self.model.optimize, self.model.prediction, self.model.s1, self.model.s2], feed_dict=feed_dict)
+        # print(prediction[0], batch_y[0])
+        # print(s1, s2)
 
         return loss, 0
 
@@ -69,6 +78,10 @@ class SimpleTrainer:
             self.model.x: batch_x,
             self.model.y: batch_y,
         }
+        
+        if self.enable_phase:
+           feed_dict[self.model.phase] = True
+        
         loss, _ = self.sess.run([self.model.loss, self.model.optimize], feed_dict=feed_dict)
 
         return loss, 0

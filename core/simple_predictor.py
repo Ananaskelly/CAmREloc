@@ -11,7 +11,7 @@ class SimplePredictor:
         self.test_batcher = test_batcher
         self.sess = sess
 
-    def test(self):
+    def test(self, enable_phase=False):
 
         mean_pose_error = 0
         mean_qua_error = 0
@@ -25,6 +25,8 @@ class SimplePredictor:
                 feed_dict = {
                     self.model.x: batch[0]
                 }
+                if enable_phase:
+                    feed_dict[self.model.phase] = False
                 [prediction] = self.sess.run([self.model.prediction], feed_dict=feed_dict)
                 mean_pose_error += calc_pose_error(batch[1][:, :3], prediction[:, :3])
                 mean_qua_error += calc_qua_error(batch[1][:, 3:], prediction[:, 3:])
@@ -36,14 +38,15 @@ class SimplePredictor:
 
         return mean_pose_error, mean_qua_error
 
-    def sample_predict(self, path_to_img):
+    def sample_predict(self, path_to_img, enable_phase=False):
         data = inf_preprocess(path_to_img)
         data = np.expand_dims(data, axis=0)
 
         feed_dict = {
             self.model.x: data
         }
-
+        if enable_phase:
+            feed_dict[self.model.phase] = False
         [pred] = self.sess.run([self.model.prediction], feed_dict=feed_dict)
 
         return pred[:3], pred[3:]

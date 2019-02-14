@@ -36,13 +36,16 @@ def bias_constant(shape, name=''):
     return tf.Variable(initializer(shape))
 
 
-def conv_block(inp_ten, k_size, c_in, c_out, strides=[1, 1, 1, 1]):
+def conv_block(inp_ten, k_size, c_in, c_out, strides=[1, 1, 1, 1], padding='SAME', enable_activation=True):
     w = weight_xavier(shape=[k_size, k_size, c_in, c_out])
     b = bias_constant(shape=[c_out])
-    conv = tf.nn.conv2d(input=inp_ten, filter=w, strides=strides, padding='SAME')
+    conv = tf.nn.conv2d(input=inp_ten, filter=w, strides=strides, padding=padding)
     conv = tf.nn.bias_add(conv, b)
-
-    return tf.nn.relu(conv)
+    
+    if enable_activation:
+        return tf.nn.relu(conv)
+    else:
+        return conv
 
 
 def inception_block(inp_ten, f11, f11_reduce3, f11_reduce5, f33, f55, fpp):
@@ -94,15 +97,62 @@ def in_block(inp_ten):
 
 
 def auxiliary_classifier_block(inp_ten):
-
     av_pool = tf.nn.avg_pool(value=inp_ten, ksize=[1, 5, 5, 1], strides=[1, 3, 3, 1], padding='SAME')
 
     c_in = av_pool.get_shape().as_list()[-1]
     conv_1 = conv_block(av_pool, k_size=1, c_in=c_in, c_out=128)
 
     flatten = tf.layers.flatten(conv_1)
-    fc_1 = tf.layers.dense(inputs=flatten, units=1024)
-    fc_1 = tf.nn.dropout(fc_1, 0.3)
-    fc_2 = tf.layers.dense(inputs=fc_1, units=7)
+    fc_1 = tf.layers.dense(inputs=flatten, units=2048)
+    # fc_1 = tf.nn.dropout(fc_1, 0.3)
+    # fc_2 = tf.layers.dense(inputs=fc_1, units=7)
+    fc_pos = tf.layers.dense(fc_1, units=3)
+    fc_qua = tf.layers.dense(fc_1, units=4)
+
+    fc_2 = tf.concat([fc_pos, fc_qua], 1)
+
+    return fc_2
+
+
+def residual_block(inp_ten, filter_size, c_out, strides=[1, 1, 1, 1], padding='SAME', enable_proj_shortcut=False, is_train=True):
+
+    shortcut = inp_ten
+    c_in = inp_ten.get_shape().as_list()[-1]
+
+    if enable_proj_shortcut:
+        shortcut = conv_block(inp_ten, k_size=filter_size, c_in=c_in, c_out=c_out, strides=[1, 2, 2, 1], padding=padding)
+
+    conv_1 = conv_block(inp_ten, k_size=filter_size, c_in=c_in, c_out=c_out, strides=strides, padding=padding)
+  
+    conv_1 = tf.layers.batch_normalization(conv_1, training=is_train)
+
+    conv_2 = conv_block(conv_1, k_size=filter_size, c_in=c_out, c_out=c_out, enable_activation=False)
+
+    conv_2 = tf.layers.batch_normalization(conv_2, training=is_train)
+
+    return tf.nn.relu(conv_2 + shortcut)
+
+
+def decoder_block(inp_ten, filter_size, c_out, out_size, is_train=True):
+
+    in_size = inp_ten.get_shape().as_list()[2]
+    pad_size = out_size - in_size
+
+    pad_ten = tf.pad(inp_ten, paddings=[[0, 0], [pad_size, pad_size], [pad_size, pad_size], [0, 0]])
+    c_in = pad_ten.get_shape().as_list()[-1]
+    conv_1 = conv_block(pad_ten, k_size=filter_size, c_in=c_in, c_out=c_out)
+
+    return tf.layers.batch_normalization(conv_1, training=is_train)
+
+
+def hourglass_regressor(inp_ten):
+    flatten = tf.layers.flatten(inp_ten)
+
+    fc_1 = tf.layers.dense(inputs=flatten, units=2048)
+
+    fc_pos = tf.layers.dense(fc_1, units=3)
+    fc_qua = tf.layers.dense(fc_1, units=4)
+
+    fc_2 = tf.concat([fc_pos, fc_qua], 1)
 
     return fc_2
